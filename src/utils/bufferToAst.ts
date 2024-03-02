@@ -647,6 +647,26 @@ const nodeConverters: ((position: number, buffer: Uint32Array, readString: ReadS
 			children
 		};
 	},
+	function jsxEmptyExpr(position, buffer): JsxEmptyExprNode {
+		const start = buffer[position++];
+		const end = buffer[position++];
+		return {
+			type: 'JsxEmptyExpr',
+			start,
+			end
+		};
+	},
+	function jsxExprContainer(position, buffer, readString): JsxExprContainerNode {
+		const start = buffer[position++];
+		const end = buffer[position++];
+		const expression = convertNode(buffer[position], buffer, readString);
+		return {
+			type: 'JsxExprContainer',
+			start,
+			end,
+			expression
+		};
+	},
 	function jsxIdentifier(position, buffer, readString): JsxIdentifierNode {
 		const start = buffer[position++];
 		const end = buffer[position++];
@@ -1275,6 +1295,8 @@ export type ImportNamespaceSpecifierNode = RollupAstNode<estree.ImportNamespaceS
 export type ImportSpecifierNode = RollupAstNode<estree.ImportSpecifier>;
 export type JsxAttributeNode = RollupAstNode<any>;
 export type JsxElementNode = RollupAstNode<any>;
+export type JsxEmptyExprNode = RollupAstNode<any>;
+export type JsxExprContainerNode = RollupAstNode<any>;
 export type JsxIdentifierNode = RollupAstNode<any>;
 export type JsxOpeningElementNode = RollupAstNode<any>;
 export type JsxTextNode = RollupAstNode<any>;

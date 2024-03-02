@@ -385,6 +385,13 @@ export const AST_NODES = {
 			['children', 'NodeList']
 		]
 	},
+	JsxEmptyExpr: {
+		estreeType: 'any'
+	},
+	JsxExprContainer: {
+		estreeType: 'any',
+		fields: [['expression', 'Node']]
+	},
 	JsxIdentifier: {
 		estreeType: 'any',
 		fields: [['name', 'String']]

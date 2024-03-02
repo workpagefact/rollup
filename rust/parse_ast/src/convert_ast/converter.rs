@@ -9,7 +9,7 @@ use swc_ecma_ast::{
   ExportDefaultExpr, ExportNamedSpecifier, ExportSpecifier, Expr, ExprOrSpread, ExprStmt, FnExpr,
   ForHead, ForInStmt, ForOfStmt, ForStmt, Function, GetterProp, Ident, IfStmt, ImportDecl,
   ImportDefaultSpecifier, ImportNamedSpecifier, ImportSpecifier, ImportStarAsSpecifier, JSXAttr,
-  JSXAttrName, JSXAttrOrSpread, JSXElement, JSXElementChild, JSXElementName, JSXOpeningElement,
+  JSXAttrName, JSXAttrOrSpread, JSXElement, JSXElementChild, JSXElementName, JSXEmptyExpr, JSXExpr, JSXExprContainer, JSXOpeningElement,
   JSXText, KeyValuePatProp, KeyValueProp, LabeledStmt, Lit, MemberExpr, MemberProp, MetaPropExpr,
   MetaPropKind, MethodKind, MethodProp, ModuleDecl, ModuleExportName, ModuleItem, NamedExport,
   NewExpr, Null, Number, ObjectLit, ObjectPat, ObjectPatProp, OptCall, OptChainBase, OptChainExpr,
@@ -3215,9 +3215,8 @@ impl<'a> AstConverter<'a> {
       JSXElementChild::JSXText(jsx_text) => {
         self.store_jsx_text(jsx_text);
       }
-      JSXElementChild::JSXExprContainer(_jsx_expr_container) => {
-        // self.store_jsx_expr_container(jsx_expr_container);
-        unimplemented!("JSXElementChild::JSXExprContainer")
+      JSXElementChild::JSXExprContainer(jsx_expr_container) => {
+        self.store_jsx_expr_container(jsx_expr_container);
       }
       JSXElementChild::JSXSpreadChild(_jsx_spread_child) => {
         // self.store_jsx_spread_child(jsx_spread_child);
@@ -3231,6 +3230,38 @@ impl<'a> AstConverter<'a> {
         self.convert_jsx_element(jsx_element);
       }
     }
+  }
+
+  fn store_jsx_expr_container(&mut self, jsx_expr_container: &JSXExprContainer) {
+    let end_position = self.add_type_and_start(
+      &TYPE_JSX_EXPR_CONTAINER,
+      &jsx_expr_container.span,
+      JSX_EXPR_CONTAINER_RESERVED_BYTES,
+      false,
+    );
+    // expression
+    self.update_reference_position(end_position + JSX_EXPR_CONTAINER_EXPRESSION_OFFSET);
+    match &jsx_expr_container.expr {
+      JSXExpr::Expr(expression) => {
+        self.convert_expression(expression);
+      }
+      JSXExpr::JSXEmptyExpr(jsx_empty_expr) => {
+        self.store_jsx_empty_expr(jsx_empty_expr);
+      }
+    }
+    // end
+    self.add_end(end_position, &jsx_expr_container.span);
+  }
+
+  fn store_jsx_empty_expr(&mut self, jsx_empty_expr: &JSXEmptyExpr) {
+    let end_position = self.add_type_and_start(
+      &TYPE_JSX_EMPTY_EXPR,
+      &jsx_empty_expr.span,
+      JSX_EMPTY_EXPR_RESERVED_BYTES,
+      false,
+    );
+    // end
+    self.add_end(end_position, &jsx_empty_expr.span);
   }
 
   fn store_jsx_text(&mut self, jsx_text: &JSXText) {
