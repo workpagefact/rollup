@@ -390,6 +390,10 @@ export const AST_NODES = {
 		],
 		flags: ['selfClosing']
 	},
+	JsxText: {
+		estreeType: 'any',
+		fields: [['value', 'String']]
+	},
 	LabeledStatement: {
 		fields: [
 			['label', 'Node'],
