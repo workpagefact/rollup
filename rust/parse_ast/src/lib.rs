@@ -19,13 +19,14 @@ mod convert_ast;
 
 mod error_emit;
 
-pub fn parse_ast(code: String, allow_return_outside_function: bool) -> Vec<u8> {
+pub fn parse_ast(code: String, allow_return_outside_function: bool, jsx: bool) -> Vec<u8> {
   let cm = Lrc::new(SourceMap::new(FilePathMapping::empty()));
   let target = EsVersion::EsNext;
   let syntax = Syntax::Es(EsConfig {
     allow_return_outside_function,
     import_attributes: true,
     explicit_resource_management: true,
+    jsx,
     ..Default::default()
   });
 
