@@ -619,6 +619,23 @@ const nodeConverters: ((position: number, buffer: Uint32Array, readString: ReadS
 			local
 		};
 	},
+	function jsxElement(position, buffer, readString): JsxElementNode {
+		const start = buffer[position++];
+		const end = buffer[position++];
+		const openingElement = convertNode(buffer[position++], buffer, readString);
+		const closingElementPosition = buffer[position++];
+		const closingElement =
+			closingElementPosition === 0 ? null : convertNode(closingElementPosition, buffer, readString);
+		const children = convertNodeList(buffer[position], buffer, readString);
+		return {
+			type: 'JsxElement',
+			start,
+			end,
+			openingElement,
+			closingElement,
+			children
+		};
+	},
 	function labeledStatement(position, buffer, readString): LabeledStatementNode {
 		const start = buffer[position++];
 		const end = buffer[position++];
@@ -1207,6 +1224,7 @@ export type ImportExpressionNode = RollupAstNode<
 >;
 export type ImportNamespaceSpecifierNode = RollupAstNode<estree.ImportNamespaceSpecifier>;
 export type ImportSpecifierNode = RollupAstNode<estree.ImportSpecifier>;
+export type JsxElementNode = RollupAstNode<any>;
 export type LabeledStatementNode = RollupAstNode<estree.LabeledStatement>;
 export type LiteralBigIntNode = RollupAstNode<estree.BigIntLiteral>;
 export type LiteralBooleanNode = RollupAstNode<estree.SimpleLiteral & { value: boolean }>;

@@ -1,23 +1,6 @@
 use swc_atoms::JsWord;
 use swc_common::Span;
-use swc_ecma_ast::{
-  ArrayLit, ArrayPat, ArrowExpr, AssignExpr, AssignOp, AssignPat, AssignPatProp, AssignTarget,
-  AssignTargetPat, AwaitExpr, BigInt, BinExpr, BinaryOp, BindingIdent, BlockStmt, BlockStmtOrExpr,
-  Bool, BreakStmt, CallExpr, Callee, CatchClause, Class, ClassDecl, ClassExpr, ClassMember,
-  ClassMethod, ClassProp, ComputedPropName, CondExpr, Constructor, ContinueStmt, DebuggerStmt,
-  Decl, DefaultDecl, DoWhileStmt, EmptyStmt, ExportAll, ExportDecl, ExportDefaultDecl,
-  ExportDefaultExpr, ExportNamedSpecifier, ExportSpecifier, Expr, ExprOrSpread, ExprStmt, FnExpr,
-  ForHead, ForInStmt, ForOfStmt, ForStmt, Function, GetterProp, Ident, IfStmt, ImportDecl,
-  ImportDefaultSpecifier, ImportNamedSpecifier, ImportSpecifier, ImportStarAsSpecifier,
-  KeyValuePatProp, KeyValueProp, LabeledStmt, Lit, MemberExpr, MemberProp, MetaPropExpr,
-  MetaPropKind, MethodKind, MethodProp, ModuleDecl, ModuleExportName, ModuleItem, NamedExport,
-  NewExpr, Null, Number, ObjectLit, ObjectPat, ObjectPatProp, OptCall, OptChainBase, OptChainExpr,
-  ParamOrTsParamProp, ParenExpr, Pat, PrivateMethod, PrivateName, PrivateProp, Program, Prop,
-  PropName, PropOrSpread, Regex, RestPat, ReturnStmt, SeqExpr, SetterProp, SimpleAssignTarget,
-  SpreadElement, StaticBlock, Stmt, Str, Super, SuperProp, SuperPropExpr, SwitchCase, SwitchStmt,
-  TaggedTpl, ThisExpr, ThrowStmt, Tpl, TplElement, TryStmt, UnaryExpr, UnaryOp, UpdateExpr,
-  UpdateOp, UsingDecl, VarDecl, VarDeclKind, VarDeclOrExpr, VarDeclarator, WhileStmt, YieldExpr,
-};
+use swc_ecma_ast::{ArrayLit, ArrayPat, ArrowExpr, AssignExpr, AssignOp, AssignPat, AssignPatProp, AssignTarget, AssignTargetPat, AwaitExpr, BigInt, BinaryOp, BindingIdent, BinExpr, BlockStmt, BlockStmtOrExpr, Bool, BreakStmt, Callee, CallExpr, CatchClause, Class, ClassDecl, ClassExpr, ClassMember, ClassMethod, ClassProp, ComputedPropName, CondExpr, Constructor, ContinueStmt, DebuggerStmt, Decl, DefaultDecl, DoWhileStmt, EmptyStmt, ExportAll, ExportDecl, ExportDefaultDecl, ExportDefaultExpr, ExportNamedSpecifier, ExportSpecifier, Expr, ExprOrSpread, ExprStmt, FnExpr, ForHead, ForInStmt, ForOfStmt, ForStmt, Function, GetterProp, Ident, IfStmt, ImportDecl, ImportDefaultSpecifier, ImportNamedSpecifier, ImportSpecifier, ImportStarAsSpecifier, JSXElement, KeyValuePatProp, KeyValueProp, LabeledStmt, Lit, MemberExpr, MemberProp, MetaPropExpr, MetaPropKind, MethodKind, MethodProp, ModuleDecl, ModuleExportName, ModuleItem, NamedExport, NewExpr, Null, Number, ObjectLit, ObjectPat, ObjectPatProp, OptCall, OptChainBase, OptChainExpr, ParamOrTsParamProp, ParenExpr, Pat, PrivateMethod, PrivateName, PrivateProp, Program, Prop, PropName, PropOrSpread, Regex, RestPat, ReturnStmt, SeqExpr, SetterProp, SimpleAssignTarget, SpreadElement, StaticBlock, Stmt, Str, Super, SuperProp, SuperPropExpr, SwitchCase, SwitchStmt, TaggedTpl, ThisExpr, ThrowStmt, Tpl, TplElement, TryStmt, UnaryExpr, UnaryOp, UpdateExpr, UpdateOp, UsingDecl, VarDecl, VarDeclarator, VarDeclKind, VarDeclOrExpr, WhileStmt, YieldExpr};
 
 use crate::convert_ast::annotations::{AnnotationKind, AnnotationWithType};
 use crate::convert_ast::converter::analyze_code::find_first_occurrence_outside_comment;
@@ -474,7 +457,10 @@ impl<'a> AstConverter<'a> {
       Expr::JSXMember(_) => unimplemented!("Cannot convert Expr::JSXMember"),
       Expr::JSXNamespacedName(_) => unimplemented!("Cannot convert Expr::JSXNamespacedName"),
       Expr::JSXEmpty(_) => unimplemented!("Cannot convert Expr::JSXEmpty"),
-      Expr::JSXElement(_) => unimplemented!("Cannot convert Expr::JSXElement"),
+      Expr::JSXElement(jsx_element) => {
+        self.convert_jsx_element(jsx_element);
+        None
+      },
       Expr::JSXFragment(_) => unimplemented!("Cannot convert Expr::JSXFragment"),
       Expr::TsTypeAssertion(_) => unimplemented!("Cannot convert Expr::TsTypeAssertion"),
       Expr::TsConstAssertion(_) => unimplemented!("Cannot convert Expr::TsConstAssertion"),
@@ -3176,6 +3162,26 @@ impl<'a> AstConverter<'a> {
     });
     // end
     self.add_end(end_position, &yield_expression.span);
+  }
+
+  fn convert_jsx_element(&mut self, jsx_element: &JSXElement) {
+ panic!("JSXElement not supported");
+    /*   let end_position = self.add_type_and_start(
+      &TYPE_JSX_ELEMENT_EXPRESSION,
+      &jsx_element.span,
+      JSX_ELEMENT_EXPRESSION_RESERVED_BYTES,
+      false,
+    );
+    self.store_identifier()
+    // argument
+    jsx_element.opening.as_ref().map(|expression| {
+
+
+      self.update_reference_position(end_position + YIELD_EXPRESSION_ARGUMENT_OFFSET);
+      self.convert_expression(expression)
+    });
+    // end
+    self.add_end(end_position, &jsx_element.span);*/
   }
 }
 
