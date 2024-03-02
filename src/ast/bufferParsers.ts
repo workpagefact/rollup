@@ -48,6 +48,8 @@ import ImportExpression from './nodes/ImportExpression';
 import ImportNamespaceSpecifier from './nodes/ImportNamespaceSpecifier';
 import ImportSpecifier from './nodes/ImportSpecifier';
 import JsxElement from './nodes/JsxElement';
+import JsxIdentifier from './nodes/JsxIdentifier';
+import JsxOpeningElement from './nodes/JsxOpeningElement';
 import LabeledStatement from './nodes/LabeledStatement';
 import Literal from './nodes/Literal';
 import LogicalExpression from './nodes/LogicalExpression';
@@ -147,6 +149,8 @@ const nodeTypeStrings = [
 	'ImportNamespaceSpecifier',
 	'ImportSpecifier',
 	'JsxElement',
+	'JsxIdentifier',
+	'JsxOpeningElement',
 	'LabeledStatement',
 	'Literal',
 	'Literal',
@@ -230,6 +234,8 @@ const nodeConstructors: (typeof NodeBase)[] = [
 	ImportNamespaceSpecifier,
 	ImportSpecifier,
 	JsxElement,
+	JsxIdentifier,
+	JsxOpeningElement,
 	LabeledStatement,
 	Literal,
 	Literal,
@@ -624,6 +630,16 @@ const bufferParsers: ((
 				? null
 				: convertNode(node, scope, closingElementPosition, buffer, readString);
 		node.children = convertNodeList(node, scope, buffer[position + 2], buffer, readString);
+	},
+	function jsxIdentifier(node: JsxIdentifier, position, buffer, readString) {
+		node.name = convertString(buffer[position], buffer, readString);
+	},
+	function jsxOpeningElement(node: JsxOpeningElement, position, buffer, readString) {
+		const { scope } = node;
+		const flags = buffer[position];
+		node.selfClosing = (flags & 1) === 1;
+		node.name = convertNode(node, scope, buffer[position + 1], buffer, readString);
+		node.attributes = convertNodeList(node, scope, buffer[position + 2], buffer, readString);
 	},
 	function labeledStatement(node: LabeledStatement, position, buffer, readString) {
 		const { scope } = node;
