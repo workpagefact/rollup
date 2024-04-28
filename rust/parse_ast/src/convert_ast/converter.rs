@@ -621,6 +621,71 @@ impl<'a> AstConverter<'a> {
     }
   }
 
+  fn convert_jsx_attribute_name(&mut self, jsx_attribute_name: &JSXAttrName) {
+    match jsx_attribute_name {
+      JSXAttrName::Ident(identifier) => {
+        self.store_jsx_identifier(identifier);
+      }
+      JSXAttrName::JSXNamespacedName(_jsx_namespaced_name) => {
+        unimplemented!("JSXElementName::JSXNamespacedName")
+      }
+    }
+  }
+
+  fn convert_jsx_attribute_or_spread(&mut self, jsx_attribute_or_spread: &JSXAttrOrSpread) {
+    match jsx_attribute_or_spread {
+      JSXAttrOrSpread::JSXAttr(jsx_attribute) => {
+        self.convert_jsx_attribute(jsx_attribute);
+      }
+      JSXAttrOrSpread::SpreadElement(_spread_element) => {
+        unimplemented!("JSXAttrOrSpread::SpreadElement")
+      }
+    }
+  }
+
+  fn convert_jsx_attribute_value(&mut self, jsx_attribute_value: &JSXAttrValue) {
+    match jsx_attribute_value {
+      JSXAttrValue::Lit(literal) => self.convert_literal(literal),
+      JSXAttrValue::JSXExprContainer(expression_container) => {
+        self.convert_jsx_expression_container(expression_container)
+      }
+      JSXAttrValue::JSXElement(jsx_element) => self.convert_jsx_element(jsx_element),
+      JSXAttrValue::JSXFragment(jsx_fragment) => self.convert_jsx_fragment(jsx_fragment),
+    }
+  }
+
+  fn convert_jsx_element_child(&mut self, jsx_element_child: &JSXElementChild) {
+    match jsx_element_child {
+      JSXElementChild::JSXText(jsx_text) => {
+        self.convert_jsx_text(jsx_text);
+      }
+      JSXElementChild::JSXExprContainer(jsx_expr_container) => {
+        self.convert_jsx_expression_container(jsx_expr_container);
+      }
+      JSXElementChild::JSXSpreadChild(_jsx_spread_child) => {
+        unimplemented!("JSXElementChild::JSXSpreadChild")
+      }
+      JSXElementChild::JSXFragment(jsx_fragment) => {
+        self.convert_jsx_fragment(jsx_fragment);
+      }
+      JSXElementChild::JSXElement(jsx_element) => {
+        self.convert_jsx_element(jsx_element);
+      }
+    }
+  }
+
+  fn convert_jsx_element_name(&mut self, jsx_element_name: &JSXElementName) {
+    match jsx_element_name {
+      JSXElementName::Ident(identifier) => self.store_jsx_identifier(identifier),
+      JSXElementName::JSXMemberExpr(_jsx_member_expression) => {
+        unimplemented!("JSXElementName::JSXMemberExpr")
+      }
+      JSXElementName::JSXNamespacedName(_jsx_namespaced_name) => {
+        unimplemented!("JSXElementName::JSXNamespacedName")
+      }
+    }
+  }
+
   fn convert_key_value_pattern_property(&mut self, key_value_pattern_property: &KeyValuePatProp) {
     self.store_key_value_property(
       &key_value_pattern_property.key,
@@ -1015,17 +1080,6 @@ impl<'a> AstConverter<'a> {
       VarDeclOrExpr::Expr(expression) => {
         self.convert_expression(expression);
       }
-    }
-  }
-  
-  fn convert_jsx_attribute_value(&mut self, jsx_attribute_value: &JSXAttrValue) {
-    match jsx_attribute_value {
-      JSXAttrValue::Lit(literal) => self.convert_literal(literal),
-      JSXAttrValue::JSXExprContainer(expression_container) => {
-        self.convert_jsx_expression_container(expression_container)
-      }
-      JSXAttrValue::JSXElement(jsx_element) => self.convert_jsx_element(jsx_element),
-      JSXAttrValue::JSXFragment(jsx_fragment) => self.convert_jsx_fragment(jsx_fragment),
     }
   }
 
@@ -2014,6 +2068,207 @@ impl<'a> AstConverter<'a> {
     self.convert_identifier(&import_named_specifier.local);
     // end
     self.add_end(end_position, &import_named_specifier.span);
+  }
+
+  fn convert_jsx_attribute(&mut self, jsx_attribute: &JSXAttr) {
+    let end_position = self.add_type_and_start(
+      &TYPE_JSX_ATTRIBUTE,
+      &jsx_attribute.span,
+      JSX_ATTRIBUTE_RESERVED_BYTES,
+      false,
+    );
+    // name
+    self.update_reference_position(end_position + JSX_ATTRIBUTE_NAME_OFFSET);
+    self.convert_jsx_attribute_name(&jsx_attribute.name);
+    // value
+    if let Some(jsx_attribute_value) = jsx_attribute.value.as_ref() {
+      self.update_reference_position(end_position + JSX_ATTRIBUTE_VALUE_OFFSET);
+      self.convert_jsx_attribute_value(jsx_attribute_value);
+    };
+    // end
+    self.add_end(end_position, &jsx_attribute.span);
+  }
+
+  fn convert_jsx_closing_element(&mut self, jsx_closing_element: &JSXClosingElement) {
+    let end_position = self.add_type_and_start(
+      &TYPE_JSX_CLOSING_ELEMENT,
+      &jsx_closing_element.span,
+      JSX_CLOSING_ELEMENT_RESERVED_BYTES,
+      false,
+    );
+    // name
+    self.update_reference_position(end_position + JSX_CLOSING_ELEMENT_NAME_OFFSET);
+    self.convert_jsx_element_name(&jsx_closing_element.name);
+    // end
+    self.add_end(end_position, &jsx_closing_element.span);
+  }
+
+  fn convert_jsx_closing_fragment(&mut self, jsx_closing_fragment: &JSXClosingFragment) {
+    let end_position = self.add_type_and_start(
+      &TYPE_JSX_CLOSING_FRAGMENT,
+      &jsx_closing_fragment.span,
+      JSX_CLOSING_FRAGMENT_RESERVED_BYTES,
+      false,
+    );
+    // end
+    self.add_end(end_position, &jsx_closing_fragment.span);
+  }
+
+  fn convert_jsx_element(&mut self, jsx_element: &JSXElement) {
+    let end_position = self.add_type_and_start(
+      &TYPE_JSX_ELEMENT,
+      &jsx_element.span,
+      JSX_ELEMENT_RESERVED_BYTES,
+      false,
+    );
+    // openingElement
+    self.update_reference_position(end_position + JSX_ELEMENT_OPENING_ELEMENT_OFFSET);
+    self.convert_jsx_opening_element(&jsx_element.opening);
+    // children
+    self.convert_item_list(
+      &jsx_element.children,
+      end_position + JSX_ELEMENT_CHILDREN_OFFSET,
+      |ast_converter, jsx_element_child| {
+        ast_converter.convert_jsx_element_child(jsx_element_child);
+        true
+      },
+    );
+    // closingElement
+    if let Some(closing) = jsx_element.closing.as_ref() {
+      self.update_reference_position(end_position + JSX_ELEMENT_CLOSING_ELEMENT_OFFSET);
+      self.convert_jsx_closing_element(closing);
+    }
+    // end
+    self.add_end(end_position, &jsx_element.span);
+  }
+
+  fn convert_jsx_empty_expression(&mut self, jsx_empty_expression: &JSXEmptyExpr) {
+    let end_position = self.add_type_and_start(
+      &TYPE_JSX_EMPTY_EXPRESSION,
+      &jsx_empty_expression.span,
+      JSX_EMPTY_EXPRESSION_RESERVED_BYTES,
+      false,
+    );
+    // end
+    self.add_end(end_position, &jsx_empty_expression.span);
+  }
+
+  fn convert_jsx_expression_container(&mut self, jsx_expr_container: &JSXExprContainer) {
+    let end_position = self.add_type_and_start(
+      &TYPE_JSX_EXPRESSION_CONTAINER,
+      &jsx_expr_container.span,
+      JSX_EXPRESSION_CONTAINER_RESERVED_BYTES,
+      false,
+    );
+    // expression
+    self.update_reference_position(end_position + JSX_EXPRESSION_CONTAINER_EXPRESSION_OFFSET);
+    match &jsx_expr_container.expr {
+      JSXExpr::Expr(expression) => {
+        self.convert_expression(expression);
+      }
+      JSXExpr::JSXEmptyExpr(jsx_empty_expr) => {
+        self.convert_jsx_empty_expression(jsx_empty_expr);
+      }
+    }
+    // end
+    self.add_end(end_position, &jsx_expr_container.span);
+  }
+
+  fn convert_jsx_fragment(&mut self, jsx_fragment: &JSXFragment) {
+    let end_position = self.add_type_and_start(
+      &TYPE_JSX_FRAGMENT,
+      &jsx_fragment.span,
+      JSX_FRAGMENT_RESERVED_BYTES,
+      false,
+    );
+    // openingFragment
+    self.update_reference_position(end_position + JSX_FRAGMENT_OPENING_FRAGMENT_OFFSET);
+    self.convert_jsx_opening_fragment(jsx_fragment.opening);
+    // children
+    self.convert_item_list(
+      &jsx_fragment.children,
+      end_position + JSX_FRAGMENT_CHILDREN_OFFSET,
+      |_ast_converter, _jsx_fragment_child| {
+        unimplemented!("Convert JSXFragmentChild");
+        // ast_converter.convert_jsx_fragment_child(jsx_fragment_child);
+        // true
+      },
+    );
+    // closingFragment
+    self.update_reference_position(end_position + JSX_FRAGMENT_CLOSING_FRAGMENT_OFFSET);
+    self.convert_jsx_closing_fragment(&jsx_fragment.closing);
+    // end
+    self.add_end(end_position, &jsx_fragment.span);
+  }
+
+  fn store_jsx_identifier(&mut self, identifier: &Ident) {
+    let end_position = self.add_type_and_start(
+      &TYPE_JSX_IDENTIFIER,
+      &identifier.span,
+      JSX_IDENTIFIER_RESERVED_BYTES,
+      false,
+    );
+    // name
+    self.convert_string(&identifier.sym, end_position + JSX_IDENTIFIER_NAME_OFFSET);
+    // end
+    self.add_end(end_position, &identifier.span);
+  }
+
+  fn convert_jsx_opening_element(&mut self, jsx_opening_element: &JSXOpeningElement) {
+    let end_position = self.add_type_and_start(
+      &TYPE_JSX_OPENING_ELEMENT,
+      &jsx_opening_element.span,
+      JSX_OPENING_ELEMENT_RESERVED_BYTES,
+      false,
+    );
+    // flags
+    let flags = if jsx_opening_element.self_closing {
+      JSX_OPENING_ELEMENT_SELF_CLOSING_FLAG
+    } else {
+      0u32
+    };
+    let flags_position = end_position + JSX_OPENING_ELEMENT_FLAGS_OFFSET;
+    self.buffer[flags_position..flags_position + 4].copy_from_slice(&flags.to_ne_bytes());
+    // name
+    self.update_reference_position(end_position + JSX_OPENING_ELEMENT_NAME_OFFSET);
+    self.convert_jsx_element_name(&jsx_opening_element.name);
+    // attributes
+    self.convert_item_list(
+      &jsx_opening_element.attrs,
+      end_position + JSX_OPENING_ELEMENT_ATTRIBUTES_OFFSET,
+      |ast_converter, jsx_attribute| {
+        ast_converter.convert_jsx_attribute_or_spread(jsx_attribute);
+        true
+      },
+    );
+    // end
+    self.add_end(end_position, &jsx_opening_element.span);
+  }
+
+  fn convert_jsx_opening_fragment(&mut self, jsxopening_fragment: JSXOpeningFragment) {
+    let end_position = self.add_type_and_start(
+      &TYPE_JSX_OPENING_FRAGMENT,
+      &jsxopening_fragment.span,
+      JSX_OPENING_FRAGMENT_RESERVED_BYTES,
+      false,
+    );
+    // end
+    self.add_end(end_position, &jsxopening_fragment.span);
+  }
+
+  fn convert_jsx_text(&mut self, jsx_text: &JSXText) {
+    let end_position = self.add_type_and_start(
+      &TYPE_JSX_TEXT,
+      &jsx_text.span,
+      JSX_TEXT_RESERVED_BYTES,
+      false,
+    );
+    // value
+    self.convert_string(&jsx_text.value, end_position + JSX_TEXT_VALUE_OFFSET);
+    // raw
+    self.convert_string(&jsx_text.raw, end_position + JSX_TEXT_RAW_OFFSET);
+    // end
+    self.add_end(end_position, &jsx_text.span);
   }
 
   fn convert_labeled_statement(&mut self, labeled_statement: &LabeledStmt) {
@@ -3176,262 +3431,6 @@ impl<'a> AstConverter<'a> {
     });
     // end
     self.add_end(end_position, &yield_expression.span);
-  }
-
-  fn convert_jsx_element(&mut self, jsx_element: &JSXElement) {
-    let end_position = self.add_type_and_start(
-      &TYPE_JSX_ELEMENT,
-      &jsx_element.span,
-      JSX_ELEMENT_RESERVED_BYTES,
-      false,
-    );
-    // openingElement
-    self.update_reference_position(end_position + JSX_ELEMENT_OPENING_ELEMENT_OFFSET);
-    self.store_jsx_opening_element(&jsx_element.opening);
-    // children
-    self.convert_item_list(
-      &jsx_element.children,
-      end_position + JSX_ELEMENT_CHILDREN_OFFSET,
-      |ast_converter, jsx_element_child| {
-        ast_converter.convert_jsx_element_child(jsx_element_child);
-        true
-      },
-    );
-    // closingElement
-    if let Some(closing) = jsx_element.closing.as_ref() {
-      self.update_reference_position(end_position + JSX_ELEMENT_CLOSING_ELEMENT_OFFSET);
-      self.convert_jsx_closing_element(closing);
-    }
-    // end
-    self.add_end(end_position, &jsx_element.span);
-  }
-
-  fn convert_jsx_element_child(&mut self, jsx_element_child: &JSXElementChild) {
-    match jsx_element_child {
-      JSXElementChild::JSXText(jsx_text) => {
-        self.store_jsx_text(jsx_text);
-      }
-      JSXElementChild::JSXExprContainer(jsx_expr_container) => {
-        self.convert_jsx_expression_container(jsx_expr_container);
-      }
-      JSXElementChild::JSXSpreadChild(_jsx_spread_child) => {
-        // self.store_jsx_spread_child(jsx_spread_child);
-        unimplemented!("JSXElementChild::JSXSpreadChild")
-      }
-      JSXElementChild::JSXFragment(jsx_fragment) => {
-        self.convert_jsx_fragment(jsx_fragment);
-      }
-      JSXElementChild::JSXElement(jsx_element) => {
-        self.convert_jsx_element(jsx_element);
-      }
-    }
-  }
-
-  fn convert_jsx_expression_container(&mut self, jsx_expr_container: &JSXExprContainer) {
-    let end_position = self.add_type_and_start(
-      &TYPE_JSX_EXPRESSION_CONTAINER,
-      &jsx_expr_container.span,
-      JSX_EXPRESSION_CONTAINER_RESERVED_BYTES,
-      false,
-    );
-    // expression
-    self.update_reference_position(end_position + JSX_EXPRESSION_CONTAINER_EXPRESSION_OFFSET);
-    match &jsx_expr_container.expr {
-      JSXExpr::Expr(expression) => {
-        self.convert_expression(expression);
-      }
-      JSXExpr::JSXEmptyExpr(jsx_empty_expr) => {
-        self.store_jsx_empty_expr(jsx_empty_expr);
-      }
-    }
-    // end
-    self.add_end(end_position, &jsx_expr_container.span);
-  }
-
-  fn store_jsx_empty_expr(&mut self, jsx_empty_expr: &JSXEmptyExpr) {
-    let end_position = self.add_type_and_start(
-      &TYPE_JSX_EMPTY_EXPRESSION,
-      &jsx_empty_expr.span,
-      JSX_EMPTY_EXPRESSION_RESERVED_BYTES,
-      false,
-    );
-    // end
-    self.add_end(end_position, &jsx_empty_expr.span);
-  }
-
-  fn store_jsx_text(&mut self, jsx_text: &JSXText) {
-    let end_position = self.add_type_and_start(
-      &TYPE_JSX_TEXT,
-      &jsx_text.span,
-      JSX_TEXT_RESERVED_BYTES,
-      false,
-    );
-    // value
-    self.convert_string(&jsx_text.value, end_position + JSX_TEXT_VALUE_OFFSET);
-    // raw
-    self.convert_string(&jsx_text.raw, end_position + JSX_TEXT_RAW_OFFSET);
-    // end
-    self.add_end(end_position, &jsx_text.span);
-  }
-
-  fn store_jsx_opening_element(&mut self, jsx_opening_element: &JSXOpeningElement) {
-    let end_position = self.add_type_and_start(
-      &TYPE_JSX_OPENING_ELEMENT,
-      &jsx_opening_element.span,
-      JSX_OPENING_ELEMENT_RESERVED_BYTES,
-      false,
-    );
-    // flags
-    let flags = if jsx_opening_element.self_closing {
-      JSX_OPENING_ELEMENT_SELF_CLOSING_FLAG
-    } else {
-      0u32
-    };
-    let flags_position = end_position + JSX_OPENING_ELEMENT_FLAGS_OFFSET;
-    self.buffer[flags_position..flags_position + 4].copy_from_slice(&flags.to_ne_bytes());
-    // name
-    self.update_reference_position(end_position + JSX_OPENING_ELEMENT_NAME_OFFSET);
-    self.convert_jsx_element_name(&jsx_opening_element.name);
-    // attributes
-    self.convert_item_list(
-      &jsx_opening_element.attrs,
-      end_position + JSX_OPENING_ELEMENT_ATTRIBUTES_OFFSET,
-      |ast_converter, jsx_attribute| {
-        ast_converter.convert_jsx_attribute_or_spread(jsx_attribute);
-        true
-      },
-    );
-    // end
-    self.add_end(end_position, &jsx_opening_element.span);
-  }
-
-  fn convert_jsx_closing_element(&mut self, jsx_closing_element: &JSXClosingElement) {
-    let end_position = self.add_type_and_start(
-      &TYPE_JSX_CLOSING_ELEMENT,
-      &jsx_closing_element.span,
-      JSX_CLOSING_ELEMENT_RESERVED_BYTES,
-      false,
-    );
-    // name
-    self.update_reference_position(end_position + JSX_CLOSING_ELEMENT_NAME_OFFSET);
-    self.convert_jsx_element_name(&jsx_closing_element.name);
-    // end
-    self.add_end(end_position, &jsx_closing_element.span);
-  }
-
-  fn convert_jsx_element_name(&mut self, jsx_element_name: &JSXElementName) {
-    match jsx_element_name {
-      JSXElementName::Ident(identifier) => self.store_jsx_identifier(identifier),
-      JSXElementName::JSXMemberExpr(jsx_member_expr) => {
-        unimplemented!("JSXElementName::JSXMemberExpr")
-      }
-      JSXElementName::JSXNamespacedName(jsx_namespaced_name) => {
-        unimplemented!("JSXElementName::JSXNamespacedName")
-      }
-    }
-  }
-
-  fn convert_jsx_attribute_or_spread(&mut self, jsx_attribute: &JSXAttrOrSpread) {
-    match jsx_attribute {
-      JSXAttrOrSpread::JSXAttr(jsx_attribute) => {
-        self.store_jsx_attribute(jsx_attribute);
-      }
-      JSXAttrOrSpread::SpreadElement(spread_element) => {
-        unimplemented!("JSXAttrOrSpread::SpreadElement")
-      }
-    }
-  }
-
-  fn store_jsx_attribute(&mut self, jsx_attribute: &JSXAttr) {
-    let end_position = self.add_type_and_start(
-      &TYPE_JSX_ATTRIBUTE,
-      &jsx_attribute.span,
-      JSX_ATTRIBUTE_RESERVED_BYTES,
-      false,
-    );
-    // name
-    self.update_reference_position(end_position + JSX_ATTRIBUTE_NAME_OFFSET);
-    self.convert_jsx_attribute_name(&jsx_attribute.name);
-    // value
-    if let Some(jsx_attribute_value) = jsx_attribute.value.as_ref() {
-      self.update_reference_position(end_position + JSX_ATTRIBUTE_VALUE_OFFSET);
-      self.convert_jsx_attribute_value(jsx_attribute_value);
-    };
-    // end
-    self.add_end(end_position, &jsx_attribute.span);
-  }
-
-  fn convert_jsx_attribute_name(&mut self, jsx_attribute_name: &JSXAttrName) {
-    match jsx_attribute_name {
-      JSXAttrName::Ident(identifier) => {
-        self.store_jsx_identifier(identifier);
-      }
-      JSXAttrName::JSXNamespacedName(jsx_namespaced_name) => {
-        unimplemented!("JSXElementName::JSXNamespacedName")
-      }
-    }
-  }
-
-  fn store_jsx_identifier(&mut self, identifier: &Ident) {
-    let end_position = self.add_type_and_start(
-      &TYPE_JSX_IDENTIFIER,
-      &identifier.span,
-      JSX_IDENTIFIER_RESERVED_BYTES,
-      false,
-    );
-    // name
-    self.convert_string(&identifier.sym, end_position + JSX_IDENTIFIER_NAME_OFFSET);
-    // end
-    self.add_end(end_position, &identifier.span);
-  }
-
-  fn convert_jsx_fragment(&mut self, jsx_fragment: &JSXFragment) {
-    let end_position = self.add_type_and_start(
-      &TYPE_JSX_FRAGMENT,
-      &jsx_fragment.span,
-      JSX_FRAGMENT_RESERVED_BYTES,
-      false,
-    );
-    // openingFragment
-    self.update_reference_position(end_position + JSX_FRAGMENT_OPENING_FRAGMENT_OFFSET);
-    self.store_jsx_opening_fragment(jsx_fragment.opening);
-    // children
-    self.convert_item_list(
-      &jsx_fragment.children,
-      end_position + JSX_FRAGMENT_CHILDREN_OFFSET,
-      |ast_converter, jsx_fragment_child| {
-        unimplemented!("Convert JSXFragmentChild");
-        // ast_converter.convert_jsx_fragment_child(jsx_fragment_child);
-        // true
-      },
-    );
-    // closingFragment
-    self.update_reference_position(end_position + JSX_FRAGMENT_CLOSING_FRAGMENT_OFFSET);
-    self.store_jsx_closing_fragment(&jsx_fragment.closing);
-    // end
-    self.add_end(end_position, &jsx_fragment.span);
-  }
-
-  fn store_jsx_opening_fragment(&mut self, jsxopening_fragment: JSXOpeningFragment) {
-    let end_position = self.add_type_and_start(
-      &TYPE_JSX_OPENING_FRAGMENT,
-      &jsxopening_fragment.span,
-      JSX_OPENING_FRAGMENT_RESERVED_BYTES,
-      false,
-    );
-    // end
-    self.add_end(end_position, &jsxopening_fragment.span);
-  }
-
-  fn store_jsx_closing_fragment(&mut self, jsx_closing_fragment: &JSXClosingFragment) {
-    let end_position = self.add_type_and_start(
-      &TYPE_JSX_CLOSING_FRAGMENT,
-      &jsx_closing_fragment.span,
-      JSX_CLOSING_FRAGMENT_RESERVED_BYTES,
-      false,
-    );
-    // end
-    self.add_end(end_position, &jsx_closing_fragment.span);
   }
 }
 
