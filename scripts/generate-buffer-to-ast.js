@@ -1,6 +1,6 @@
 import { writeFile } from 'node:fs/promises';
 import { astNodeNamesWithFieldOrder } from './ast-types.js';
-import { firstLetterLowercase, generateNotEditFilesComment, lintTsFile } from './helpers.js';
+import { firstLettersLowercase, generateNotEditFilesComment, lintTsFile } from './helpers.js';
 
 const notEditFilesComment = generateNotEditFilesComment(import.meta.url);
 
@@ -42,7 +42,7 @@ const jsConverters = astNodeNamesWithFieldOrder.map(({ name, fields, node, origi
 		...getFixedProperties(node),
 		...Object.entries(node.additionalFields || []).map(([key, value]) => `${key}: ${value}`)
 	];
-	return `function ${firstLetterLowercase(
+	return `function ${firstLettersLowercase(
 		name
 	)} (position, buffer${readStringArgument}): ${name}Node {
     const start = buffer[position++];

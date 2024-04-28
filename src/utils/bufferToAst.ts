@@ -619,27 +619,41 @@ const nodeConverters: ((position: number, buffer: Uint32Array, readString: ReadS
 			local
 		};
 	},
-	function jsxAttribute(position, buffer, readString): JsxAttributeNode {
+	function jsxAttribute(position, buffer, readString): JSXAttributeNode {
+		const start = buffer[position++];
+		const end = buffer[position++];
+		const name = convertNode(buffer[position++], buffer, readString);
+		const valuePosition = buffer[position];
+		const value = valuePosition === 0 ? null : convertNode(valuePosition, buffer, readString);
+		return {
+			type: 'JSXAttribute',
+			start,
+			end,
+			name,
+			value
+		};
+	},
+	function jsxClosingElement(position, buffer, readString): JSXClosingElementNode {
 		const start = buffer[position++];
 		const end = buffer[position++];
 		const name = convertNode(buffer[position], buffer, readString);
 		return {
-			type: 'JsxAttribute',
+			type: 'JSXClosingElement',
 			start,
 			end,
 			name
 		};
 	},
-	function jsxClosingFragment(position, buffer): JsxClosingFragmentNode {
+	function jsxClosingFragment(position, buffer): JSXClosingFragmentNode {
 		const start = buffer[position++];
 		const end = buffer[position++];
 		return {
-			type: 'JsxClosingFragment',
+			type: 'JSXClosingFragment',
 			start,
 			end
 		};
 	},
-	function jsxElement(position, buffer, readString): JsxElementNode {
+	function jsxElement(position, buffer, readString): JSXElementNode {
 		const start = buffer[position++];
 		const end = buffer[position++];
 		const openingElement = convertNode(buffer[position++], buffer, readString);
@@ -648,7 +662,7 @@ const nodeConverters: ((position: number, buffer: Uint32Array, readString: ReadS
 			closingElementPosition === 0 ? null : convertNode(closingElementPosition, buffer, readString);
 		const children = convertNodeList(buffer[position], buffer, readString);
 		return {
-			type: 'JsxElement',
+			type: 'JSXElement',
 			start,
 			end,
 			openingElement,
@@ -656,34 +670,34 @@ const nodeConverters: ((position: number, buffer: Uint32Array, readString: ReadS
 			children
 		};
 	},
-	function jsxEmptyExpr(position, buffer): JsxEmptyExprNode {
+	function jsxEmptyExpression(position, buffer): JSXEmptyExpressionNode {
 		const start = buffer[position++];
 		const end = buffer[position++];
 		return {
-			type: 'JsxEmptyExpr',
+			type: 'JSXEmptyExpression',
 			start,
 			end
 		};
 	},
-	function jsxExprContainer(position, buffer, readString): JsxExprContainerNode {
+	function jsxExpressionContainer(position, buffer, readString): JSXExpressionContainerNode {
 		const start = buffer[position++];
 		const end = buffer[position++];
 		const expression = convertNode(buffer[position], buffer, readString);
 		return {
-			type: 'JsxExprContainer',
+			type: 'JSXExpressionContainer',
 			start,
 			end,
 			expression
 		};
 	},
-	function jsxFragment(position, buffer, readString): JsxFragmentNode {
+	function jsxFragment(position, buffer, readString): JSXFragmentNode {
 		const start = buffer[position++];
 		const end = buffer[position++];
 		const openingFragment = convertNode(buffer[position++], buffer, readString);
 		const closingFragment = convertNode(buffer[position++], buffer, readString);
 		const children = convertNodeList(buffer[position], buffer, readString);
 		return {
-			type: 'JsxFragment',
+			type: 'JSXFragment',
 			start,
 			end,
 			openingFragment,
@@ -691,18 +705,18 @@ const nodeConverters: ((position: number, buffer: Uint32Array, readString: ReadS
 			children
 		};
 	},
-	function jsxIdentifier(position, buffer, readString): JsxIdentifierNode {
+	function jsxIdentifier(position, buffer, readString): JSXIdentifierNode {
 		const start = buffer[position++];
 		const end = buffer[position++];
 		const name = convertString(buffer[position], buffer, readString);
 		return {
-			type: 'JsxIdentifier',
+			type: 'JSXIdentifier',
 			start,
 			end,
 			name
 		};
 	},
-	function jsxOpeningElement(position, buffer, readString): JsxOpeningElementNode {
+	function jsxOpeningElement(position, buffer, readString): JSXOpeningElementNode {
 		const start = buffer[position++];
 		const end = buffer[position++];
 		const flags = buffer[position++];
@@ -710,7 +724,7 @@ const nodeConverters: ((position: number, buffer: Uint32Array, readString: ReadS
 		const name = convertNode(buffer[position++], buffer, readString);
 		const attributes = convertNodeList(buffer[position], buffer, readString);
 		return {
-			type: 'JsxOpeningElement',
+			type: 'JSXOpeningElement',
 			start,
 			end,
 			selfClosing,
@@ -718,24 +732,28 @@ const nodeConverters: ((position: number, buffer: Uint32Array, readString: ReadS
 			attributes
 		};
 	},
-	function jsxOpeningFragment(position, buffer): JsxOpeningFragmentNode {
+	function jsxOpeningFragment(position, buffer): JSXOpeningFragmentNode {
 		const start = buffer[position++];
 		const end = buffer[position++];
 		return {
-			type: 'JsxOpeningFragment',
-			start,
-			end
-		};
-	},
-	function jsxText(position, buffer, readString): JsxTextNode {
-		const start = buffer[position++];
-		const end = buffer[position++];
-		const value = convertString(buffer[position], buffer, readString);
-		return {
-			type: 'JsxText',
+			type: 'JSXOpeningFragment',
 			start,
 			end,
-			value
+			attributes: [],
+			selfClosing: false
+		};
+	},
+	function jsxText(position, buffer, readString): JSXTextNode {
+		const start = buffer[position++];
+		const end = buffer[position++];
+		const value = convertString(buffer[position++], buffer, readString);
+		const raw = convertString(buffer[position], buffer, readString);
+		return {
+			type: 'JSXText',
+			start,
+			end,
+			value,
+			raw
 		};
 	},
 	function labeledStatement(position, buffer, readString): LabeledStatementNode {
@@ -1326,16 +1344,17 @@ export type ImportExpressionNode = RollupAstNode<
 >;
 export type ImportNamespaceSpecifierNode = RollupAstNode<estree.ImportNamespaceSpecifier>;
 export type ImportSpecifierNode = RollupAstNode<estree.ImportSpecifier>;
-export type JsxAttributeNode = RollupAstNode<any>;
-export type JsxClosingFragmentNode = RollupAstNode<any>;
-export type JsxElementNode = RollupAstNode<any>;
-export type JsxEmptyExprNode = RollupAstNode<any>;
-export type JsxExprContainerNode = RollupAstNode<any>;
-export type JsxFragmentNode = RollupAstNode<any>;
-export type JsxIdentifierNode = RollupAstNode<any>;
-export type JsxOpeningElementNode = RollupAstNode<any>;
-export type JsxOpeningFragmentNode = RollupAstNode<any>;
-export type JsxTextNode = RollupAstNode<any>;
+export type JSXAttributeNode = RollupAstNode<any>;
+export type JSXClosingElementNode = RollupAstNode<any>;
+export type JSXClosingFragmentNode = RollupAstNode<any>;
+export type JSXElementNode = RollupAstNode<any>;
+export type JSXEmptyExpressionNode = RollupAstNode<any>;
+export type JSXExpressionContainerNode = RollupAstNode<any>;
+export type JSXFragmentNode = RollupAstNode<any>;
+export type JSXIdentifierNode = RollupAstNode<any>;
+export type JSXOpeningElementNode = RollupAstNode<any>;
+export type JSXOpeningFragmentNode = RollupAstNode<any>;
+export type JSXTextNode = RollupAstNode<any>;
 export type LabeledStatementNode = RollupAstNode<estree.LabeledStatement>;
 export type LiteralBigIntNode = RollupAstNode<estree.BigIntLiteral>;
 export type LiteralBooleanNode = RollupAstNode<estree.SimpleLiteral & { value: boolean }>;

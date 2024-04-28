@@ -47,16 +47,17 @@ import ImportDefaultSpecifier from './nodes/ImportDefaultSpecifier';
 import ImportExpression from './nodes/ImportExpression';
 import ImportNamespaceSpecifier from './nodes/ImportNamespaceSpecifier';
 import ImportSpecifier from './nodes/ImportSpecifier';
-import JsxAttribute from './nodes/JsxAttribute';
-import JsxClosingFragment from './nodes/JsxClosingFragment';
-import JsxElement from './nodes/JsxElement';
-import JsxEmptyExpr from './nodes/JsxEmptyExpr';
-import JsxExprContainer from './nodes/JsxExprContainer';
-import JsxFragment from './nodes/JsxFragment';
-import JsxIdentifier from './nodes/JsxIdentifier';
-import JsxOpeningElement from './nodes/JsxOpeningElement';
-import JsxOpeningFragment from './nodes/JsxOpeningFragment';
-import JsxText from './nodes/JsxText';
+import JSXAttribute from './nodes/JSXAttribute';
+import JSXClosingElement from './nodes/JSXClosingElement';
+import JSXClosingFragment from './nodes/JSXClosingFragment';
+import JSXElement from './nodes/JSXElement';
+import JSXEmptyExpression from './nodes/JSXEmptyExpression';
+import JSXExpressionContainer from './nodes/JSXExpressionContainer';
+import JSXFragment from './nodes/JSXFragment';
+import JSXIdentifier from './nodes/JSXIdentifier';
+import JSXOpeningElement from './nodes/JSXOpeningElement';
+import JSXOpeningFragment from './nodes/JSXOpeningFragment';
+import JSXText from './nodes/JSXText';
 import LabeledStatement from './nodes/LabeledStatement';
 import Literal from './nodes/Literal';
 import LogicalExpression from './nodes/LogicalExpression';
@@ -155,16 +156,17 @@ const nodeTypeStrings = [
 	'ImportExpression',
 	'ImportNamespaceSpecifier',
 	'ImportSpecifier',
-	'JsxAttribute',
-	'JsxClosingFragment',
-	'JsxElement',
-	'JsxEmptyExpr',
-	'JsxExprContainer',
-	'JsxFragment',
-	'JsxIdentifier',
-	'JsxOpeningElement',
-	'JsxOpeningFragment',
-	'JsxText',
+	'JSXAttribute',
+	'JSXClosingElement',
+	'JSXClosingFragment',
+	'JSXElement',
+	'JSXEmptyExpression',
+	'JSXExpressionContainer',
+	'JSXFragment',
+	'JSXIdentifier',
+	'JSXOpeningElement',
+	'JSXOpeningFragment',
+	'JSXText',
 	'LabeledStatement',
 	'Literal',
 	'Literal',
@@ -247,16 +249,17 @@ const nodeConstructors: (typeof NodeBase)[] = [
 	ImportExpression,
 	ImportNamespaceSpecifier,
 	ImportSpecifier,
-	JsxAttribute,
-	JsxClosingFragment,
-	JsxElement,
-	JsxEmptyExpr,
-	JsxExprContainer,
-	JsxFragment,
-	JsxIdentifier,
-	JsxOpeningElement,
-	JsxOpeningFragment,
-	JsxText,
+	JSXAttribute,
+	JSXClosingElement,
+	JSXClosingFragment,
+	JSXElement,
+	JSXEmptyExpression,
+	JSXExpressionContainer,
+	JSXFragment,
+	JSXIdentifier,
+	JSXOpeningElement,
+	JSXOpeningFragment,
+	JSXText,
 	LabeledStatement,
 	Literal,
 	Literal,
@@ -642,12 +645,19 @@ const bufferParsers: ((
 				? node.local
 				: convertNode(node, scope, importedPosition, buffer, readString);
 	},
-	function jsxAttribute(node: JsxAttribute, position, buffer, readString) {
+	function jsxAttribute(node: JSXAttribute, position, buffer, readString) {
+		const { scope } = node;
+		node.name = convertNode(node, scope, buffer[position], buffer, readString);
+		const valuePosition = buffer[position + 1];
+		node.value =
+			valuePosition === 0 ? null : convertNode(node, scope, valuePosition, buffer, readString);
+	},
+	function jsxClosingElement(node: JSXClosingElement, position, buffer, readString) {
 		const { scope } = node;
 		node.name = convertNode(node, scope, buffer[position], buffer, readString);
 	},
 	function jsxClosingFragment() {},
-	function jsxElement(node: JsxElement, position, buffer, readString) {
+	function jsxElement(node: JSXElement, position, buffer, readString) {
 		const { scope } = node;
 		node.openingElement = convertNode(node, scope, buffer[position], buffer, readString);
 		const closingElementPosition = buffer[position + 1];
@@ -657,30 +667,34 @@ const bufferParsers: ((
 				: convertNode(node, scope, closingElementPosition, buffer, readString);
 		node.children = convertNodeList(node, scope, buffer[position + 2], buffer, readString);
 	},
-	function jsxEmptyExpr() {},
-	function jsxExprContainer(node: JsxExprContainer, position, buffer, readString) {
+	function jsxEmptyExpression() {},
+	function jsxExpressionContainer(node: JSXExpressionContainer, position, buffer, readString) {
 		const { scope } = node;
 		node.expression = convertNode(node, scope, buffer[position], buffer, readString);
 	},
-	function jsxFragment(node: JsxFragment, position, buffer, readString) {
+	function jsxFragment(node: JSXFragment, position, buffer, readString) {
 		const { scope } = node;
 		node.openingFragment = convertNode(node, scope, buffer[position], buffer, readString);
 		node.closingFragment = convertNode(node, scope, buffer[position + 1], buffer, readString);
 		node.children = convertNodeList(node, scope, buffer[position + 2], buffer, readString);
 	},
-	function jsxIdentifier(node: JsxIdentifier, position, buffer, readString) {
+	function jsxIdentifier(node: JSXIdentifier, position, buffer, readString) {
 		node.name = convertString(buffer[position], buffer, readString);
 	},
-	function jsxOpeningElement(node: JsxOpeningElement, position, buffer, readString) {
+	function jsxOpeningElement(node: JSXOpeningElement, position, buffer, readString) {
 		const { scope } = node;
 		const flags = buffer[position];
 		node.selfClosing = (flags & 1) === 1;
 		node.name = convertNode(node, scope, buffer[position + 1], buffer, readString);
 		node.attributes = convertNodeList(node, scope, buffer[position + 2], buffer, readString);
 	},
-	function jsxOpeningFragment() {},
-	function jsxText(node: JsxText, position, buffer, readString) {
+	function jsxOpeningFragment(node: JSXOpeningFragment) {
+		node.attributes = [];
+		node.selfClosing = false;
+	},
+	function jsxText(node: JSXText, position, buffer, readString) {
 		node.value = convertString(buffer[position], buffer, readString);
+		node.raw = convertString(buffer[position + 1], buffer, readString);
 	},
 	function labeledStatement(node: LabeledStatement, position, buffer, readString) {
 		const { scope } = node;
