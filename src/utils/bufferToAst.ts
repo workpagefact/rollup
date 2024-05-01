@@ -657,17 +657,17 @@ const nodeConverters: ((position: number, buffer: Uint32Array, readString: ReadS
 		const start = buffer[position++];
 		const end = buffer[position++];
 		const openingElement = convertNode(buffer[position++], buffer, readString);
-		const closingElementPosition = buffer[position++];
+		const children = convertNodeList(buffer[position++], buffer, readString);
+		const closingElementPosition = buffer[position];
 		const closingElement =
 			closingElementPosition === 0 ? null : convertNode(closingElementPosition, buffer, readString);
-		const children = convertNodeList(buffer[position], buffer, readString);
 		return {
 			type: 'JSXElement',
 			start,
 			end,
 			openingElement,
-			closingElement,
-			children
+			children,
+			closingElement
 		};
 	},
 	function jsxEmptyExpression(position, buffer): JSXEmptyExpressionNode {
@@ -694,15 +694,15 @@ const nodeConverters: ((position: number, buffer: Uint32Array, readString: ReadS
 		const start = buffer[position++];
 		const end = buffer[position++];
 		const openingFragment = convertNode(buffer[position++], buffer, readString);
-		const closingFragment = convertNode(buffer[position++], buffer, readString);
-		const children = convertNodeList(buffer[position], buffer, readString);
+		const children = convertNodeList(buffer[position++], buffer, readString);
+		const closingFragment = convertNode(buffer[position], buffer, readString);
 		return {
 			type: 'JSXFragment',
 			start,
 			end,
 			openingFragment,
-			closingFragment,
-			children
+			children,
+			closingFragment
 		};
 	},
 	function jsxIdentifier(position, buffer, readString): JSXIdentifierNode {

@@ -23,6 +23,7 @@
  * For encoded non-JavaScript AST nodes like TypeScript or JSX, we try to follow
  * the format of typescript-eslint, which can be derived from their playground
  * https://typescript-eslint.io/play/#showAST=es&fileType=.tsx
+ * For JSX, see also https://github.com/facebook/jsx/blob/main/AST.md
  */
 
 /** @typedef {"Node"|"OptionalNode"|"NodeList"|"Annotations"|"InvalidAnnotations"|"String"|"FixedString"|"OptionalString"|"Float"} FieldType */
@@ -389,8 +390,8 @@ export const AST_NODES = {
 		estreeType: 'any',
 		fields: [
 			['openingElement', 'Node'],
-			['closingElement', 'OptionalNode'],
-			['children', 'NodeList']
+			['children', 'NodeList'],
+			['closingElement', 'OptionalNode']
 		]
 	},
 	JSXEmptyExpression: {
@@ -404,8 +405,8 @@ export const AST_NODES = {
 		estreeType: 'any',
 		fields: [
 			['openingFragment', 'Node'],
-			['closingFragment', 'Node'],
-			['children', 'NodeList']
+			['children', 'NodeList'],
+			['closingFragment', 'Node']
 		]
 	},
 	JSXIdentifier: {
