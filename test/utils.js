@@ -480,6 +480,11 @@ const replaceStringifyValues = (key, value) => {
 			const { options, ...nonOptionsProperties } = value;
 			return { ...nonOptionsProperties, ...(options ? { arguments: [options] } : {}) };
 		}
+		case 'JSXText': {
+			// raw text is encoded differently in acorn
+			const { raw, ...nonRawProperties } = value;
+			return nonRawProperties;
+		}
 	}
 
 	return key.startsWith('_')
