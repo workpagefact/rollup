@@ -1,5 +1,5 @@
 use swc_atoms::JsWord;
-use swc_common::Span;
+use swc_common::{Span, Spanned};
 use swc_ecma_ast::{
   ArrayLit, ArrayPat, ArrowExpr, AssignExpr, AssignOp, AssignPat, AssignPatProp, AssignTarget,
   AssignTargetPat, AwaitExpr, BigInt, BinaryOp, BindingIdent, BinExpr, BlockStmt, BlockStmtOrExpr,
@@ -11,15 +11,15 @@ use swc_ecma_ast::{
   ImportDefaultSpecifier, ImportNamedSpecifier, ImportSpecifier, ImportStarAsSpecifier, JSXAttr,
   JSXAttrName, JSXAttrOrSpread, JSXAttrValue, JSXClosingElement, JSXClosingFragment, JSXElement,
   JSXElementChild, JSXElementName, JSXEmptyExpr, JSXExpr, JSXExprContainer, JSXFragment,
-  JSXNamespacedName, JSXOpeningElement, JSXOpeningFragment, JSXText, KeyValuePatProp, KeyValueProp,
-  LabeledStmt, Lit, MemberExpr, MemberProp, MetaPropExpr, MetaPropKind, MethodKind, MethodProp,
-  ModuleDecl, ModuleExportName, ModuleItem, NamedExport, NewExpr, Null, Number, ObjectLit,
-  ObjectPat, ObjectPatProp, OptCall, OptChainBase, OptChainExpr, ParamOrTsParamProp, ParenExpr,
-  Pat, PrivateMethod, PrivateName, PrivateProp, Program, Prop, PropName, PropOrSpread, Regex,
-  RestPat, ReturnStmt, SeqExpr, SetterProp, SimpleAssignTarget, SpreadElement, StaticBlock, Stmt,
-  Str, Super, SuperProp, SuperPropExpr, SwitchCase, SwitchStmt, TaggedTpl, ThisExpr, ThrowStmt,
-  Tpl, TplElement, TryStmt, UnaryExpr, UnaryOp, UpdateExpr, UpdateOp, UsingDecl, VarDecl,
-  VarDeclarator, VarDeclKind, VarDeclOrExpr, WhileStmt, YieldExpr,
+  JSXMemberExpr, JSXNamespacedName, JSXObject, JSXOpeningElement, JSXOpeningFragment, JSXText,
+  KeyValuePatProp, KeyValueProp, LabeledStmt, Lit, MemberExpr, MemberProp, MetaPropExpr,
+  MetaPropKind, MethodKind, MethodProp, ModuleDecl, ModuleExportName, ModuleItem, NamedExport,
+  NewExpr, Null, Number, ObjectLit, ObjectPat, ObjectPatProp, OptCall, OptChainBase, OptChainExpr,
+  ParamOrTsParamProp, ParenExpr, Pat, PrivateMethod, PrivateName, PrivateProp, Program, Prop,
+  PropName, PropOrSpread, Regex, RestPat, ReturnStmt, SeqExpr, SetterProp, SimpleAssignTarget,
+  SpreadElement, StaticBlock, Stmt, Str, Super, SuperProp, SuperPropExpr, SwitchCase, SwitchStmt,
+  TaggedTpl, ThisExpr, ThrowStmt, Tpl, TplElement, TryStmt, UnaryExpr, UnaryOp, UpdateExpr,
+  UpdateOp, UsingDecl, VarDecl, VarDeclarator, VarDeclKind, VarDeclOrExpr, WhileStmt, YieldExpr,
 };
 
 use crate::convert_ast::annotations::{AnnotationKind, AnnotationWithType};
@@ -697,11 +697,22 @@ impl<'a> AstConverter<'a> {
   fn convert_jsx_element_name(&mut self, jsx_element_name: &JSXElementName) {
     match jsx_element_name {
       JSXElementName::Ident(identifier) => self.store_jsx_identifier(identifier),
-      JSXElementName::JSXMemberExpr(_jsx_member_expression) => {
-        unimplemented!("JSXElementName::JSXMemberExpr")
+      JSXElementName::JSXMemberExpr(jsx_member_expression) => {
+        self.convert_jsx_member_expression(jsx_member_expression);
       }
       JSXElementName::JSXNamespacedName(_jsx_namespaced_name) => {
         unimplemented!("JSXElementName::JSXNamespacedName")
+      }
+    }
+  }
+
+  fn convert_jsx_object(&mut self, jsx_object: &JSXObject) {
+    match jsx_object {
+      JSXObject::JSXMemberExpr(jsx_member_expression) => {
+        self.convert_jsx_member_expression(jsx_member_expression);
+      }
+      JSXObject::Ident(identifier) => {
+        self.store_jsx_identifier(identifier);
       }
     }
   }
@@ -2231,6 +2242,23 @@ impl<'a> AstConverter<'a> {
     self.convert_string(&identifier.sym, end_position + JSX_IDENTIFIER_NAME_OFFSET);
     // end
     self.add_end(end_position, &identifier.span);
+  }
+
+  fn convert_jsx_member_expression(&mut self, jsx_member_expression: &JSXMemberExpr) {
+    let end_position = self.add_type_and_start(
+      &TYPE_JSX_MEMBER_EXPRESSION,
+      &jsx_member_expression.span(),
+      JSX_MEMBER_EXPRESSION_RESERVED_BYTES,
+      false,
+    );
+    // object
+    self.update_reference_position(end_position + JSX_MEMBER_EXPRESSION_OBJECT_OFFSET);
+    self.convert_jsx_object(&jsx_member_expression.obj);
+    // property
+    self.update_reference_position(end_position + JSX_MEMBER_EXPRESSION_PROPERTY_OFFSET);
+    self.store_jsx_identifier(&jsx_member_expression.prop);
+    // end
+    self.add_end(end_position, &jsx_member_expression.span());
   }
 
   fn convert_jsx_namespaced_name(&mut self, jsx_namespaced_name: &JSXNamespacedName) {
