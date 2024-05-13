@@ -442,6 +442,10 @@ export const AST_NODES = {
 		},
 		estreeType: 'any'
 	},
+	JSXSpreadChild: {
+		estreeType: 'any',
+		fields: [['expression', 'Node']]
+	},
 	JSXText: {
 		estreeType: 'any',
 		fields: [

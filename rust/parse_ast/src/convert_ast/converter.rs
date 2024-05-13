@@ -11,15 +11,16 @@ use swc_ecma_ast::{
   ImportDefaultSpecifier, ImportNamedSpecifier, ImportSpecifier, ImportStarAsSpecifier, JSXAttr,
   JSXAttrName, JSXAttrOrSpread, JSXAttrValue, JSXClosingElement, JSXClosingFragment, JSXElement,
   JSXElementChild, JSXElementName, JSXEmptyExpr, JSXExpr, JSXExprContainer, JSXFragment,
-  JSXMemberExpr, JSXNamespacedName, JSXObject, JSXOpeningElement, JSXOpeningFragment, JSXText,
-  KeyValuePatProp, KeyValueProp, LabeledStmt, Lit, MemberExpr, MemberProp, MetaPropExpr,
-  MetaPropKind, MethodKind, MethodProp, ModuleDecl, ModuleExportName, ModuleItem, NamedExport,
-  NewExpr, Null, Number, ObjectLit, ObjectPat, ObjectPatProp, OptCall, OptChainBase, OptChainExpr,
-  ParamOrTsParamProp, ParenExpr, Pat, PrivateMethod, PrivateName, PrivateProp, Program, Prop,
-  PropName, PropOrSpread, Regex, RestPat, ReturnStmt, SeqExpr, SetterProp, SimpleAssignTarget,
-  SpreadElement, StaticBlock, Stmt, Str, Super, SuperProp, SuperPropExpr, SwitchCase, SwitchStmt,
-  TaggedTpl, ThisExpr, ThrowStmt, Tpl, TplElement, TryStmt, UnaryExpr, UnaryOp, UpdateExpr,
-  UpdateOp, UsingDecl, VarDecl, VarDeclarator, VarDeclKind, VarDeclOrExpr, WhileStmt, YieldExpr,
+  JSXMemberExpr, JSXNamespacedName, JSXObject, JSXOpeningElement, JSXOpeningFragment,
+  JSXSpreadChild, JSXText, KeyValuePatProp, KeyValueProp, LabeledStmt, Lit, MemberExpr, MemberProp,
+  MetaPropExpr, MetaPropKind, MethodKind, MethodProp, ModuleDecl, ModuleExportName, ModuleItem,
+  NamedExport, NewExpr, Null, Number, ObjectLit, ObjectPat, ObjectPatProp, OptCall, OptChainBase,
+  OptChainExpr, ParamOrTsParamProp, ParenExpr, Pat, PrivateMethod, PrivateName, PrivateProp,
+  Program, Prop, PropName, PropOrSpread, Regex, RestPat, ReturnStmt, SeqExpr, SetterProp,
+  SimpleAssignTarget, SpreadElement, StaticBlock, Stmt, Str, Super, SuperProp, SuperPropExpr,
+  SwitchCase, SwitchStmt, TaggedTpl, ThisExpr, ThrowStmt, Tpl, TplElement, TryStmt, UnaryExpr,
+  UnaryOp, UpdateExpr, UpdateOp, UsingDecl, VarDecl, VarDeclarator, VarDeclKind, VarDeclOrExpr,
+  WhileStmt, YieldExpr,
 };
 
 use crate::convert_ast::annotations::{AnnotationKind, AnnotationWithType};
@@ -682,8 +683,8 @@ impl<'a> AstConverter<'a> {
       JSXElementChild::JSXExprContainer(jsx_expr_container) => {
         self.convert_jsx_expression_container(jsx_expr_container);
       }
-      JSXElementChild::JSXSpreadChild(_jsx_spread_child) => {
-        unimplemented!("JSXElementChild::JSXSpreadChild")
+      JSXElementChild::JSXSpreadChild(jsx_spread_child) => {
+        self.convert_jsx_spread_child(jsx_spread_child);
       }
       JSXElementChild::JSXFragment(jsx_fragment) => {
         self.convert_jsx_fragment(jsx_fragment);
@@ -2318,6 +2319,20 @@ impl<'a> AstConverter<'a> {
     );
     // end
     self.add_end(end_position, &jsxopening_fragment.span);
+  }
+
+  fn convert_jsx_spread_child(&mut self, jsx_spread_child: &JSXSpreadChild) {
+    let end_position = self.add_type_and_start(
+      &TYPE_JSX_SPREAD_CHILD,
+      &jsx_spread_child.span,
+      JSX_SPREAD_CHILD_RESERVED_BYTES,
+      false,
+    );
+    // expression
+    self.update_reference_position(end_position + JSX_SPREAD_CHILD_EXPRESSION_OFFSET);
+    self.convert_expression(&jsx_spread_child.expr);
+    // end
+    self.add_end(end_position, &jsx_spread_child.span);
   }
 
   fn convert_jsx_text(&mut self, jsx_text: &JSXText) {
