@@ -48,6 +48,7 @@ export const childNodeKeys: Record<string, string[]> = {
 	JSXExpressionContainer: ['expression'],
 	JSXFragment: ['openingFragment', 'children', 'closingFragment'],
 	JSXIdentifier: [],
+	JSXNamespacedName: ['namespace', 'name'],
 	JSXOpeningElement: ['name', 'attributes'],
 	JSXOpeningFragment: [],
 	JSXText: [],

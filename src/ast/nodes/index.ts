@@ -47,6 +47,7 @@ import JSXEmptyExpression from './JSXEmptyExpression';
 import JSXExpressionContainer from './JSXExpressionContainer';
 import JSXFragment from './JSXFragment';
 import JSXIdentifier from './JSXIdentifier';
+import JSXNamespacedName from './JSXNamespacedName';
 import JSXOpeningElement from './JSXOpeningElement';
 import JSXOpeningFragment from './JSXOpeningFragment';
 import JSXText from './JSXText';
@@ -137,6 +138,7 @@ export const nodeConstructors: {
 	JSXExpressionContainer,
 	JSXFragment,
 	JSXIdentifier,
+	JSXNamespacedName,
 	JSXOpeningElement,
 	JSXOpeningFragment,
 	JSXText,

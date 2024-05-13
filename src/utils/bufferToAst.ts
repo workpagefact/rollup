@@ -716,6 +716,19 @@ const nodeConverters: ((position: number, buffer: Uint32Array, readString: ReadS
 			name
 		};
 	},
+	function jsxNamespacedName(position, buffer, readString): JSXNamespacedNameNode {
+		const start = buffer[position++];
+		const end = buffer[position++];
+		const namespace = convertNode(buffer[position++], buffer, readString);
+		const name = convertNode(buffer[position], buffer, readString);
+		return {
+			type: 'JSXNamespacedName',
+			start,
+			end,
+			namespace,
+			name
+		};
+	},
 	function jsxOpeningElement(position, buffer, readString): JSXOpeningElementNode {
 		const start = buffer[position++];
 		const end = buffer[position++];
@@ -1352,6 +1365,7 @@ export type JSXEmptyExpressionNode = RollupAstNode<any>;
 export type JSXExpressionContainerNode = RollupAstNode<any>;
 export type JSXFragmentNode = RollupAstNode<any>;
 export type JSXIdentifierNode = RollupAstNode<any>;
+export type JSXNamespacedNameNode = RollupAstNode<any>;
 export type JSXOpeningElementNode = RollupAstNode<any>;
 export type JSXOpeningFragmentNode = RollupAstNode<any>;
 export type JSXTextNode = RollupAstNode<any>;
