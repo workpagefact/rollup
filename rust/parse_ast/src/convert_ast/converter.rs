@@ -653,13 +653,17 @@ impl<'a> AstConverter<'a> {
     }
   }
 
-  fn convert_jsx_attribute_or_spread(&mut self, jsx_attribute_or_spread: &JSXAttrOrSpread) {
+  fn convert_jsx_attribute_or_spread(
+    &mut self,
+    jsx_attribute_or_spread: &JSXAttrOrSpread,
+    previous_element_end: u32,
+  ) {
     match jsx_attribute_or_spread {
       JSXAttrOrSpread::JSXAttr(jsx_attribute) => {
         self.convert_jsx_attribute(jsx_attribute);
       }
-      JSXAttrOrSpread::SpreadElement(_spread_element) => {
-        unimplemented!("JSXAttrOrSpread::SpreadElement")
+      JSXAttrOrSpread::SpreadElement(spread_element) => {
+        self.convert_jsx_spread_element(spread_element, previous_element_end);
       }
     }
   }
@@ -2298,11 +2302,14 @@ impl<'a> AstConverter<'a> {
     self.update_reference_position(end_position + JSX_OPENING_ELEMENT_NAME_OFFSET);
     self.convert_jsx_element_name(&jsx_opening_element.name);
     // attributes
-    self.convert_item_list(
+    let mut previous_element_end = jsx_opening_element.name.span().hi.0;
+    self.convert_item_list_with_state(
       &jsx_opening_element.attrs,
+      &mut previous_element_end,
       end_position + JSX_OPENING_ELEMENT_ATTRIBUTES_OFFSET,
-      |ast_converter, jsx_attribute| {
-        ast_converter.convert_jsx_attribute_or_spread(jsx_attribute);
+      |ast_converter, jsx_attribute, previous_end| {
+        ast_converter.convert_jsx_attribute_or_spread(jsx_attribute, *previous_end);
+        *previous_end = jsx_attribute.span().hi.0;
         true
       },
     );
@@ -2333,6 +2340,27 @@ impl<'a> AstConverter<'a> {
     self.convert_expression(&jsx_spread_child.expr);
     // end
     self.add_end(end_position, &jsx_spread_child.span);
+  }
+
+  fn convert_jsx_spread_element(
+    &mut self,
+    spread_element: &SpreadElement,
+    previous_element_end: u32,
+  ) {
+    let end_position = self.add_type_and_explicit_start(
+      &TYPE_JSX_SPREAD_ATTRIBUTE,
+      find_first_occurrence_outside_comment(self.code, b'{', previous_element_end),
+      JSX_SPREAD_ATTRIBUTE_RESERVED_BYTES,
+    );
+    // argument
+    self.update_reference_position(end_position + JSX_SPREAD_ATTRIBUTE_ARGUMENT_OFFSET);
+    self.convert_expression(&spread_element.expr);
+    // end
+    self.add_explicit_end(
+      end_position,
+      find_first_occurrence_outside_comment(self.code, b'}', spread_element.expr.span().hi.0 - 1)
+        + 1,
+    );
   }
 
   fn convert_jsx_text(&mut self, jsx_text: &JSXText) {

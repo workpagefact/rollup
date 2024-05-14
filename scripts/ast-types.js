@@ -442,6 +442,10 @@ export const AST_NODES = {
 		},
 		estreeType: 'any'
 	},
+	JSXSpreadAttribute: {
+		estreeType: 'any',
+		fields: [['argument', 'Node']]
+	},
 	JSXSpreadChild: {
 		estreeType: 'any',
 		fields: [['expression', 'Node']]

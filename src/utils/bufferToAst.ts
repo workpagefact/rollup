@@ -769,6 +769,17 @@ const nodeConverters: ((position: number, buffer: Uint32Array, readString: ReadS
 			selfClosing: false
 		};
 	},
+	function jsxSpreadAttribute(position, buffer, readString): JSXSpreadAttributeNode {
+		const start = buffer[position++];
+		const end = buffer[position++];
+		const argument = convertNode(buffer[position], buffer, readString);
+		return {
+			type: 'JSXSpreadAttribute',
+			start,
+			end,
+			argument
+		};
+	},
 	function jsxSpreadChild(position, buffer, readString): JSXSpreadChildNode {
 		const start = buffer[position++];
 		const end = buffer[position++];
@@ -1393,6 +1404,7 @@ export type JSXMemberExpressionNode = RollupAstNode<any>;
 export type JSXNamespacedNameNode = RollupAstNode<any>;
 export type JSXOpeningElementNode = RollupAstNode<any>;
 export type JSXOpeningFragmentNode = RollupAstNode<any>;
+export type JSXSpreadAttributeNode = RollupAstNode<any>;
 export type JSXSpreadChildNode = RollupAstNode<any>;
 export type JSXTextNode = RollupAstNode<any>;
 export type LabeledStatementNode = RollupAstNode<estree.LabeledStatement>;
