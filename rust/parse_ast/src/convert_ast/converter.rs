@@ -10,17 +10,16 @@ use swc_ecma_ast::{
   ForHead, ForInStmt, ForOfStmt, ForStmt, Function, GetterProp, Ident, IfStmt, ImportDecl,
   ImportDefaultSpecifier, ImportNamedSpecifier, ImportSpecifier, ImportStarAsSpecifier, JSXAttr,
   JSXAttrName, JSXAttrOrSpread, JSXAttrValue, JSXClosingElement, JSXClosingFragment, JSXElement,
-  JSXElementChild, JSXElementName, JSXEmptyExpr, JSXExpr, JSXExprContainer, JSXFragment,
-  JSXMemberExpr, JSXNamespacedName, JSXObject, JSXOpeningElement, JSXOpeningFragment,
-  JSXSpreadChild, JSXText, KeyValuePatProp, KeyValueProp, LabeledStmt, Lit, MemberExpr, MemberProp,
-  MetaPropExpr, MetaPropKind, MethodKind, MethodProp, ModuleDecl, ModuleExportName, ModuleItem,
-  NamedExport, NewExpr, Null, Number, ObjectLit, ObjectPat, ObjectPatProp, OptCall, OptChainBase,
-  OptChainExpr, ParamOrTsParamProp, ParenExpr, Pat, PrivateMethod, PrivateName, PrivateProp,
-  Program, Prop, PropName, PropOrSpread, Regex, RestPat, ReturnStmt, SeqExpr, SetterProp,
-  SimpleAssignTarget, SpreadElement, StaticBlock, Stmt, Str, Super, SuperProp, SuperPropExpr,
-  SwitchCase, SwitchStmt, TaggedTpl, ThisExpr, ThrowStmt, Tpl, TplElement, TryStmt, UnaryExpr,
-  UnaryOp, UpdateExpr, UpdateOp, UsingDecl, VarDecl, VarDeclarator, VarDeclKind, VarDeclOrExpr,
-  WhileStmt, YieldExpr,
+  JSXElementChild, JSXElementName, JSXExpr, JSXExprContainer, JSXFragment, JSXMemberExpr,
+  JSXNamespacedName, JSXObject, JSXOpeningElement, JSXOpeningFragment, JSXSpreadChild, JSXText,
+  KeyValuePatProp, KeyValueProp, LabeledStmt, Lit, MemberExpr, MemberProp, MetaPropExpr,
+  MetaPropKind, MethodKind, MethodProp, ModuleDecl, ModuleExportName, ModuleItem, NamedExport,
+  NewExpr, Null, Number, ObjectLit, ObjectPat, ObjectPatProp, OptCall, OptChainBase, OptChainExpr,
+  ParamOrTsParamProp, ParenExpr, Pat, PrivateMethod, PrivateName, PrivateProp, Program, Prop,
+  PropName, PropOrSpread, Regex, RestPat, ReturnStmt, SeqExpr, SetterProp, SimpleAssignTarget,
+  SpreadElement, StaticBlock, Stmt, Str, Super, SuperProp, SuperPropExpr, SwitchCase, SwitchStmt,
+  TaggedTpl, ThisExpr, ThrowStmt, Tpl, TplElement, TryStmt, UnaryExpr, UnaryOp, UpdateExpr,
+  UpdateOp, UsingDecl, VarDecl, VarDeclarator, VarDeclKind, VarDeclOrExpr, WhileStmt, YieldExpr,
 };
 
 use crate::convert_ast::annotations::{AnnotationKind, AnnotationWithType};
@@ -2178,15 +2177,14 @@ impl<'a> AstConverter<'a> {
     self.add_end(end_position, &jsx_element.span);
   }
 
-  fn convert_jsx_empty_expression(&mut self, jsx_empty_expression: &JSXEmptyExpr) {
-    let end_position = self.add_type_and_start(
+  fn convert_jsx_empty_expression(&mut self, start: u32, end: u32) {
+    let end_position = self.add_type_and_explicit_start(
       &TYPE_JSX_EMPTY_EXPRESSION,
-      &jsx_empty_expression.span,
+      start,
       JSX_EMPTY_EXPRESSION_RESERVED_BYTES,
-      false,
     );
     // end
-    self.add_end(end_position, &jsx_empty_expression.span);
+    self.add_explicit_end(end_position, end);
   }
 
   fn convert_jsx_expression_container(&mut self, jsx_expr_container: &JSXExprContainer) {
@@ -2203,7 +2201,9 @@ impl<'a> AstConverter<'a> {
         self.convert_expression(expression);
       }
       JSXExpr::JSXEmptyExpr(jsx_empty_expr) => {
-        self.convert_jsx_empty_expression(jsx_empty_expr);
+        // The span does not consider the size of the container, hence we use the container span
+        self
+          .convert_jsx_empty_expression(jsx_expr_container.span.lo.0, jsx_empty_expr.span.hi.0 - 1);
       }
     }
     // end
